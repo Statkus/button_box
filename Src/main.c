@@ -22,6 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usbd_hid.h"
 
 /* USER CODE END Includes */
 
@@ -65,6 +66,12 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+  Mouse_HID_TypeDef Mouse_HID = {0};
+  Mouse_HID.report_id = 1;
+
+  Joystick_HID_TypeDef Joystick_HID = {0};
+  Joystick_HID.report_id = 2;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -97,6 +104,33 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+    Mouse_HID.x = 10;
+    Mouse_HID.buttons = 2;
+
+    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Mouse_HID, sizeof(Mouse_HID_TypeDef));
+    HAL_Delay(500);
+
+    Mouse_HID.buttons = 0;
+
+    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Mouse_HID, sizeof(Mouse_HID_TypeDef));
+    HAL_Delay(500);
+
+    Joystick_HID.buttons = 1;
+    Joystick_HID.x = 0;
+    Joystick_HID.y = 0;
+    Joystick_HID.z = 127;
+
+    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Joystick_HID, sizeof(Joystick_HID_TypeDef));
+    HAL_Delay(500);
+
+    Joystick_HID.buttons = 8;
+    Joystick_HID.x = 127;
+    Joystick_HID.y = -127;
+    Joystick_HID.z = 0;
+
+    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Joystick_HID, sizeof(Joystick_HID_TypeDef));
+    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
