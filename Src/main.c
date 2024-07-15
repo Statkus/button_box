@@ -332,11 +332,33 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : MOUSE_CLICK_Pin */
-  GPIO_InitStruct.Pin = MOUSE_CLICK_Pin;
+  /*Configure GPIO pins : BUTTON_20_Pin BUTTON_21_Pin */
+  GPIO_InitStruct.Pin = BUTTON_20_Pin|BUTTON_21_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(MOUSE_CLICK_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : MOUSE_CLICK_Pin BUTTON_22_Pin BUTTON_23_Pin BUTTON_24_Pin
+                           BUTTON_25_Pin BUTTON_26_Pin BUTTON_16_Pin BUTTON_17_Pin
+                           BUTTON_18_Pin BUTTON_19_Pin */
+  GPIO_InitStruct.Pin = MOUSE_CLICK_Pin|BUTTON_22_Pin|BUTTON_23_Pin|BUTTON_24_Pin
+                          |BUTTON_25_Pin|BUTTON_26_Pin|BUTTON_16_Pin|BUTTON_17_Pin
+                          |BUTTON_18_Pin|BUTTON_19_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BUTTON_1_Pin BUTTON_2_Pin BUTTON_3_Pin BUTTON_11_Pin
+                           BUTTON_12_Pin BUTTON_13_Pin BUTTON_14_Pin BUTTON_15_Pin
+                           BUTTON_4_Pin BUTTON_5_Pin BUTTON_6_Pin BUTTON_7_Pin
+                           BUTTON_8_Pin BUTTON_9_Pin BUTTON_10_Pin */
+  GPIO_InitStruct.Pin = BUTTON_1_Pin|BUTTON_2_Pin|BUTTON_3_Pin|BUTTON_11_Pin
+                          |BUTTON_12_Pin|BUTTON_13_Pin|BUTTON_14_Pin|BUTTON_15_Pin
+                          |BUTTON_4_Pin|BUTTON_5_Pin|BUTTON_6_Pin|BUTTON_7_Pin
+                          |BUTTON_8_Pin|BUTTON_9_Pin|BUTTON_10_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
