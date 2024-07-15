@@ -60,6 +60,8 @@ static void MX_ADC1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+uint8_t new_ADC_data = 0;
+
 /* USER CODE END 0 */
 
 /**
@@ -68,13 +70,8 @@ static void MX_ADC1_Init(void);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
-
-  Mouse_HID_TypeDef Mouse_HID = {0};
-  Mouse_HID.report_id = 1;
-
-  Joystick_HID_TypeDef Joystick_HID = {0};
-  Joystick_HID.report_id = 2;
 
   /* USER CODE END 1 */
 
@@ -101,6 +98,18 @@ int main(void)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
+  Mouse_HID_TypeDef mouse_HID = {0};
+  mouse_HID.report_id = 1;
+
+  Joystick_HID_TypeDef joystick_HID = {0};
+  joystick_HID.report_id = 2;
+
+  uint8_t previous_mouse_buttons = 0;
+
+  uint32_t ADC_DMA_buffer[2] = {0};
+
+  HAL_ADC_Start_DMA(&hadc1, ADC_DMA_buffer, 2);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,32 +120,65 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    Mouse_HID.x = 10;
-    Mouse_HID.buttons = 2;
+    /* Handle mouse ------------------------------------------------------------------------------*/
+    if (new_ADC_data == 1)
+    {
+      new_ADC_data = 0;
 
-    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Mouse_HID, sizeof(Mouse_HID_TypeDef));
-    HAL_Delay(500);
+      if (ADC_DMA_buffer[0] > MOUSE_X_CENTER_HIGH || ADC_DMA_buffer[0] < MOUSE_X_CENTER_LOW)
+      {
+        mouse_HID.x = (MIN (ADC_DMA_buffer[0], 254) - 127) / 4;
+      }
+      else
+      {
+        mouse_HID.x = 0;
+      }
 
-    Mouse_HID.buttons = 0;
+      if (ADC_DMA_buffer[1] > MOUSE_Y_CENTER_HIGH || ADC_DMA_buffer[1] < MOUSE_Y_CENTER_LOW)
+      {
+        mouse_HID.y = (MIN (ADC_DMA_buffer[1], 254) - 127) / 4;
+      }
+      else
+      {
+        mouse_HID.y = 0;
+      }
 
-    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Mouse_HID, sizeof(Mouse_HID_TypeDef));
-    HAL_Delay(500);
+      HAL_ADC_Start_DMA(&hadc1, ADC_DMA_buffer, 2);
+    }
 
-    Joystick_HID.buttons = 1;
-    Joystick_HID.x = 0;
-    Joystick_HID.y = 0;
-    Joystick_HID.z = 127;
+    if (HAL_GPIO_ReadPin(MOUSE_CLICK_GPIO_Port, MOUSE_CLICK_Pin) == GPIO_PIN_RESET)
+    {
+      mouse_HID.buttons = 1;
+    }
+    else
+    {
+      mouse_HID.buttons = 0;
+    }
 
-    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Joystick_HID, sizeof(Joystick_HID_TypeDef));
-    HAL_Delay(500);
+    if (previous_mouse_buttons != mouse_HID.buttons || mouse_HID.x != 0 || mouse_HID.y != 0)
+    {
+      USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&mouse_HID, sizeof(Mouse_HID_TypeDef));
+      HAL_Delay(20);
+    }
 
-    Joystick_HID.buttons = 8;
-    Joystick_HID.x = 127;
-    Joystick_HID.y = -127;
-    Joystick_HID.z = 0;
+    previous_mouse_buttons = mouse_HID.buttons;
 
-    USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&Joystick_HID, sizeof(Joystick_HID_TypeDef));
-    HAL_Delay(500);
+    /* Handle joystick ---------------------------------------------------------------------------*/
+    //joystick_HID.buttons = 1;
+    //joystick_HID.x = 0;
+    //joystick_HID.y = 0;
+    //joystick_HID.z = 127;
+
+    //USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joystick_HID, sizeof(Joystick_HID_TypeDef));
+    //HAL_Delay(500);
+
+    //joystick_HID.buttons = 8;
+    //joystick_HID.x = 127;
+    //joystick_HID.y = -127;
+    //joystick_HID.z = 0;
+
+    //USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joystick_HID, sizeof(Joystick_HID_TypeDef));
+    //HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
@@ -301,6 +343,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    new_ADC_data = 1;
+}
 
 /* USER CODE END 4 */
 

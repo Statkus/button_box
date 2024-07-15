@@ -78,6 +78,11 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
+#define MOUSE_X_CENTER_LOW  123
+#define MOUSE_X_CENTER_HIGH 129
+#define MOUSE_Y_CENTER_LOW  121
+#define MOUSE_Y_CENTER_HIGH 127
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
