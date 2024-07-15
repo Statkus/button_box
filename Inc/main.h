@@ -133,6 +133,8 @@ void Error_Handler(void);
 #define MOUSE_Y_CENTER_LOW  121
 #define MOUSE_Y_CENTER_HIGH 127
 
+#define JOYSTICK_NUMBER_OF_BUTTONS 26
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

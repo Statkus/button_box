@@ -55,6 +55,8 @@ static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
+void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,7 +106,64 @@ int main(void)
   Joystick_HID_TypeDef joystick_HID = {0};
   joystick_HID.report_id = 2;
 
-  uint8_t previous_mouse_buttons = 0;
+  uint8_t  previous_mouse_buttons    = 0;
+  uint32_t previous_joystick_buttons = 0;
+
+  GPIO_TypeDef* const joystick_buttons_GPIO_port[JOYSTICK_NUMBER_OF_BUTTONS] =
+   {BUTTON_1_GPIO_Port,
+    BUTTON_2_GPIO_Port,
+    BUTTON_3_GPIO_Port,
+    BUTTON_4_GPIO_Port,
+    BUTTON_5_GPIO_Port,
+    BUTTON_6_GPIO_Port,
+    BUTTON_7_GPIO_Port,
+    BUTTON_8_GPIO_Port,
+    BUTTON_9_GPIO_Port,
+    BUTTON_10_GPIO_Port,
+    BUTTON_11_GPIO_Port,
+    BUTTON_12_GPIO_Port,
+    BUTTON_13_GPIO_Port,
+    BUTTON_14_GPIO_Port,
+    BUTTON_15_GPIO_Port,
+    BUTTON_16_GPIO_Port,
+    BUTTON_17_GPIO_Port,
+    BUTTON_18_GPIO_Port,
+    BUTTON_19_GPIO_Port,
+    BUTTON_20_GPIO_Port,
+    BUTTON_21_GPIO_Port,
+    BUTTON_22_GPIO_Port,
+    BUTTON_23_GPIO_Port,
+    BUTTON_24_GPIO_Port,
+    BUTTON_25_GPIO_Port,
+    BUTTON_26_GPIO_Port};
+
+  const uint16_t joystick_buttons_GPIO_pin[JOYSTICK_NUMBER_OF_BUTTONS] =
+   {BUTTON_1_Pin,
+    BUTTON_2_Pin,
+    BUTTON_3_Pin,
+    BUTTON_4_Pin,
+    BUTTON_5_Pin,
+    BUTTON_6_Pin,
+    BUTTON_7_Pin,
+    BUTTON_8_Pin,
+    BUTTON_9_Pin,
+    BUTTON_10_Pin,
+    BUTTON_11_Pin,
+    BUTTON_12_Pin,
+    BUTTON_13_Pin,
+    BUTTON_14_Pin,
+    BUTTON_15_Pin,
+    BUTTON_16_Pin,
+    BUTTON_17_Pin,
+    BUTTON_18_Pin,
+    BUTTON_19_Pin,
+    BUTTON_20_Pin,
+    BUTTON_21_Pin,
+    BUTTON_22_Pin,
+    BUTTON_23_Pin,
+    BUTTON_24_Pin,
+    BUTTON_25_Pin,
+    BUTTON_26_Pin};
 
   uint32_t ADC_DMA_buffer[2] = {0};
 
@@ -155,7 +214,7 @@ int main(void)
       mouse_HID.buttons = 0;
     }
 
-    if (previous_mouse_buttons != mouse_HID.buttons || mouse_HID.x != 0 || mouse_HID.y != 0)
+    if (mouse_HID.buttons != previous_mouse_buttons || mouse_HID.x != 0 || mouse_HID.y != 0)
     {
       USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&mouse_HID, sizeof(Mouse_HID_TypeDef));
       HAL_Delay(20);
@@ -164,21 +223,18 @@ int main(void)
     previous_mouse_buttons = mouse_HID.buttons;
 
     /* Handle joystick ---------------------------------------------------------------------------*/
-    //joystick_HID.buttons = 1;
-    //joystick_HID.x = 0;
-    //joystick_HID.y = 0;
-    //joystick_HID.z = 127;
+    for (int i = 0; i < JOYSTICK_NUMBER_OF_BUTTONS; i++)
+    {
+      GPIO_PinState_to_bit(&joystick_HID.buttons, i, HAL_GPIO_ReadPin(joystick_buttons_GPIO_port[i], joystick_buttons_GPIO_pin[i]));
+    }
 
-    //USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joystick_HID, sizeof(Joystick_HID_TypeDef));
-    //HAL_Delay(500);
+    if (joystick_HID.buttons != previous_joystick_buttons)
+    {
+      USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joystick_HID, sizeof(Joystick_HID_TypeDef));
+      HAL_Delay(20);
+    }
 
-    //joystick_HID.buttons = 8;
-    //joystick_HID.x = 127;
-    //joystick_HID.y = -127;
-    //joystick_HID.z = 0;
-
-    //USBD_HID_SendReport(&hUsbDeviceFS, (uint8_t*)&joystick_HID, sizeof(Joystick_HID_TypeDef));
-    //HAL_Delay(500);
+    previous_joystick_buttons = joystick_HID.buttons;
   }
   /* USER CODE END 3 */
 }
@@ -365,6 +421,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state)
+{
+  if (pin_state == GPIO_PIN_SET)
+  {
+    *bitfield &= ~(1 << bit_index);
+  }
+  else
+  {
+    *bitfield |= (1 << bit_index);
+  }
+}
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
