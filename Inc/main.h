@@ -59,6 +59,12 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
+#define MOUSE_X_Pin GPIO_PIN_0
+#define MOUSE_X_GPIO_Port GPIOA
+#define MOUSE_Y_Pin GPIO_PIN_1
+#define MOUSE_Y_GPIO_Port GPIOA
+#define MOUSE_CLICK_Pin GPIO_PIN_2
+#define MOUSE_CLICK_GPIO_Port GPIOA
 #define DM_Pin GPIO_PIN_11
 #define DM_GPIO_Port GPIOA
 #define DP_Pin GPIO_PIN_12
