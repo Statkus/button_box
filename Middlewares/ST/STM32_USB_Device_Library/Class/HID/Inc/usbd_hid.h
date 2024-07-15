@@ -43,11 +43,11 @@ extern "C" {
 #ifndef HID_EPIN_ADDR
 #define HID_EPIN_ADDR                              0x81U
 #endif /* HID_EPIN_ADDR */
-#define HID_EPIN_SIZE                              0x04U
+#define HID_EPIN_SIZE                              0x08U
 
 #define USB_HID_CONFIG_DESC_SIZ                    34U
 #define USB_HID_DESC_SIZ                           9U
-#define HID_MOUSE_REPORT_DESC_SIZE                 74U
+#define HID_MOUSE_REPORT_DESC_SIZE                 124U
 
 #define HID_DESCRIPTOR_TYPE                        0x21U
 #define HID_REPORT_DESC                            0x22U
@@ -106,6 +106,24 @@ typedef struct
   uint8_t           bHIDDescriptorType;
   uint16_t          wItemLength;
 } __PACKED USBD_HIDDescTypeDef;
+
+typedef struct
+{
+    uint8_t report_id;
+    uint8_t buttons;
+    int8_t x;
+    int8_t y;
+    int8_t wheel;
+} __attribute__((__packed__)) Mouse_HID_TypeDef;
+
+typedef struct
+{
+    uint8_t report_id;
+    uint32_t buttons;
+    int8_t x;
+    int8_t y;
+    int8_t z;
+} __attribute__((__packed__)) Joystick_HID_TypeDef;
 
 /**
   * @}
