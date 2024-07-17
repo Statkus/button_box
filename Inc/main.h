@@ -131,7 +131,24 @@ void Error_Handler(void);
 #define MOUSE_Y_CENTER_LOW  121
 #define MOUSE_Y_CENTER_HIGH 127
 
-#define JOYSTICK_NUMBER_OF_BUTTONS 26
+#define JOYSTICK_NUMBER_OF_BUTTONS         19
+#define JOYSTICK_NUMBER_OF_ROTARY_ENCODERS  3
+
+typedef enum
+{
+  Idle = 0,
+  Clockwise,
+  Counterclockwise
+} Rotary_Encoder_State;
+
+typedef struct
+{
+  Rotary_Encoder_State state;
+  GPIO_PinState A;
+  GPIO_PinState B;
+  GPIO_PinState previous_A;
+  GPIO_PinState previous_B;
+} Rotary_Encoder_TypeDef;
 
 /* USER CODE END Private defines */
 

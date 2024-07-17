@@ -56,6 +56,7 @@ static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state);
+void Compute_Rotary_Encoder_State(Rotary_Encoder_TypeDef* rotary_encoder);
 
 /* USER CODE END PFP */
 
@@ -128,14 +129,7 @@ int main(void)
     BUTTON_16_GPIO_Port,
     BUTTON_17_GPIO_Port,
     BUTTON_18_GPIO_Port,
-    BUTTON_19_GPIO_Port,
-    BUTTON_20_GPIO_Port,
-    BUTTON_21_GPIO_Port,
-    BUTTON_22_GPIO_Port,
-    BUTTON_23_GPIO_Port,
-    BUTTON_24_GPIO_Port,
-    BUTTON_25_GPIO_Port,
-    BUTTON_26_GPIO_Port};
+    BUTTON_19_GPIO_Port};
 
   const uint16_t joystick_buttons_GPIO_pin[JOYSTICK_NUMBER_OF_BUTTONS] =
    {BUTTON_1_Pin,
@@ -156,14 +150,38 @@ int main(void)
     BUTTON_16_Pin,
     BUTTON_17_Pin,
     BUTTON_18_Pin,
-    BUTTON_19_Pin,
-    BUTTON_20_Pin,
-    BUTTON_21_Pin,
-    BUTTON_22_Pin,
-    BUTTON_23_Pin,
-    BUTTON_24_Pin,
-    BUTTON_25_Pin,
-    BUTTON_26_Pin};
+    BUTTON_19_Pin};
+
+  Rotary_Encoder_TypeDef rotary_encoders[JOYSTICK_NUMBER_OF_ROTARY_ENCODERS];
+
+  for (int i =0; i < JOYSTICK_NUMBER_OF_ROTARY_ENCODERS; i++)
+  {
+    rotary_encoders[i].state      = Idle;
+    rotary_encoders[i].A          = GPIO_PIN_SET;
+    rotary_encoders[i].B          = GPIO_PIN_SET;
+    rotary_encoders[i].previous_A = GPIO_PIN_SET;
+    rotary_encoders[i].previous_B = GPIO_PIN_SET;
+  }
+
+  GPIO_TypeDef* const joystick_rotary_encoder_A_GPIO_port[JOYSTICK_NUMBER_OF_ROTARY_ENCODERS] =
+   {ROTARY_ENCODER_1_A_GPIO_Port,
+    ROTARY_ENCODER_2_A_GPIO_Port,
+    ROTARY_ENCODER_3_A_GPIO_Port};
+
+  GPIO_TypeDef* const joystick_rotary_encoder_B_GPIO_port[JOYSTICK_NUMBER_OF_ROTARY_ENCODERS] =
+   {ROTARY_ENCODER_1_B_GPIO_Port,
+    ROTARY_ENCODER_2_B_GPIO_Port,
+    ROTARY_ENCODER_3_B_GPIO_Port};
+
+  const uint16_t joystick_rotary_encoder_A_GPIO_pin[JOYSTICK_NUMBER_OF_ROTARY_ENCODERS] =
+   {ROTARY_ENCODER_1_A_Pin,
+    ROTARY_ENCODER_2_A_Pin,
+    ROTARY_ENCODER_3_A_Pin};
+
+  const uint16_t joystick_rotary_encoder_B_GPIO_pin[JOYSTICK_NUMBER_OF_ROTARY_ENCODERS] =
+   {ROTARY_ENCODER_1_B_Pin,
+    ROTARY_ENCODER_2_B_Pin,
+    ROTARY_ENCODER_3_B_Pin};
 
   uint32_t ADC_DMA_buffer[2] = {0};
 
@@ -186,7 +204,7 @@ int main(void)
 
       if (ADC_DMA_buffer[0] > MOUSE_X_CENTER_HIGH || ADC_DMA_buffer[0] < MOUSE_X_CENTER_LOW)
       {
-        mouse_HID.x = (MIN (ADC_DMA_buffer[0], 254) - 127) / 4;
+        mouse_HID.x = (int8_t)(MIN (ADC_DMA_buffer[0], 254) - 127) / -4;
       }
       else
       {
@@ -223,10 +241,43 @@ int main(void)
     previous_mouse_buttons = mouse_HID.buttons;
 
     /* Handle joystick ---------------------------------------------------------------------------*/
+    // Compute standard buttons state
     for (int i = 0; i < JOYSTICK_NUMBER_OF_BUTTONS; i++)
     {
       GPIO_PinState_to_bit(&joystick_HID.buttons, i, HAL_GPIO_ReadPin(joystick_buttons_GPIO_port[i], joystick_buttons_GPIO_pin[i]));
     }
+
+    // Compute rotary encoders state
+    for (int i =0; i < JOYSTICK_NUMBER_OF_ROTARY_ENCODERS; i++)
+    {
+      rotary_encoders[i].A = HAL_GPIO_ReadPin(joystick_rotary_encoder_A_GPIO_port[i], joystick_rotary_encoder_A_GPIO_pin[i]);
+      rotary_encoders[i].B = HAL_GPIO_ReadPin(joystick_rotary_encoder_B_GPIO_port[i], joystick_rotary_encoder_B_GPIO_pin[i]);
+
+      Compute_Rotary_Encoder_State(&rotary_encoders[i]);
+
+      if (rotary_encoders[i].state == Clockwise)
+      {
+        GPIO_PinState_to_bit(&joystick_HID.buttons, JOYSTICK_NUMBER_OF_BUTTONS + (i * 2), GPIO_PIN_RESET);
+        GPIO_PinState_to_bit(&joystick_HID.buttons, JOYSTICK_NUMBER_OF_BUTTONS + (i * 2) + 1, GPIO_PIN_SET);
+      }
+      else if (rotary_encoders[i].state == Counterclockwise)
+      {
+        GPIO_PinState_to_bit(&joystick_HID.buttons, JOYSTICK_NUMBER_OF_BUTTONS + (i * 2), GPIO_PIN_SET);
+        GPIO_PinState_to_bit(&joystick_HID.buttons, JOYSTICK_NUMBER_OF_BUTTONS + (i * 2) + 1, GPIO_PIN_RESET);
+      }
+      else
+      {
+        GPIO_PinState_to_bit(&joystick_HID.buttons, JOYSTICK_NUMBER_OF_BUTTONS + (i * 2), GPIO_PIN_SET);
+        GPIO_PinState_to_bit(&joystick_HID.buttons, JOYSTICK_NUMBER_OF_BUTTONS + (i * 2) + 1, GPIO_PIN_SET);
+      }
+
+      rotary_encoders[i].previous_A = rotary_encoders[i].A;
+      rotary_encoders[i].previous_B = rotary_encoders[i].B;
+    }
+
+    // Set 4 last buttons to 4 first buttons but inverted
+    joystick_HID.buttons &= 0x0FFFFFFF;
+    joystick_HID.buttons |= (~joystick_HID.buttons & 0x0000000F) << 28;
 
     if (joystick_HID.buttons != previous_joystick_buttons)
     {
@@ -431,6 +482,31 @@ void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState p
   else
   {
     *bitfield |= (1 << bit_index);
+  }
+}
+
+void Compute_Rotary_Encoder_State(Rotary_Encoder_TypeDef* rotary_encoder)
+{
+  if (rotary_encoder->A == GPIO_PIN_RESET
+      && rotary_encoder->A != rotary_encoder->previous_A
+      && rotary_encoder->B == GPIO_PIN_SET)
+  {
+    rotary_encoder->state = Clockwise;
+  }
+  else if (rotary_encoder->B == GPIO_PIN_RESET
+      && rotary_encoder->B != rotary_encoder->previous_B
+      && rotary_encoder->A == GPIO_PIN_SET)
+  {
+    rotary_encoder->state = Counterclockwise;
+  }
+  else if ((rotary_encoder->B == GPIO_PIN_SET
+            && rotary_encoder->B != rotary_encoder->previous_B
+            && rotary_encoder->A == GPIO_PIN_SET)
+            || (rotary_encoder->A == GPIO_PIN_SET
+            && rotary_encoder->A != rotary_encoder->previous_A
+            && rotary_encoder->B == GPIO_PIN_SET))
+  {
+    rotary_encoder->state = Idle;
   }
 }
 
