@@ -126,10 +126,10 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
-#define MOUSE_X_CENTER_LOW  121
-#define MOUSE_X_CENTER_HIGH 124
-#define MOUSE_Y_CENTER_LOW  121
-#define MOUSE_Y_CENTER_HIGH 126
+#define MOUSE_X_CENTER_LOW  120
+#define MOUSE_X_CENTER_HIGH 134
+#define MOUSE_Y_CENTER_LOW  120
+#define MOUSE_Y_CENTER_HIGH 134
 
 #define NUMBER_OF_BUTTONS         19
 #define NUMBER_OF_ROTARY_ENCODERS 3
