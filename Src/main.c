@@ -204,7 +204,7 @@ int main(void)
 
       if (ADC_DMA_buffer[0] > MOUSE_X_CENTER_HIGH || ADC_DMA_buffer[0] < MOUSE_X_CENTER_LOW)
       {
-        mouse_HID.x = (int8_t)(MIN (ADC_DMA_buffer[0], 254) - 127) / -4;
+        mouse_HID.x = (int8_t)(MIN (ADC_DMA_buffer[0], 254) - 127) / -8;
       }
       else
       {
@@ -213,7 +213,7 @@ int main(void)
 
       if (ADC_DMA_buffer[1] > MOUSE_Y_CENTER_HIGH || ADC_DMA_buffer[1] < MOUSE_Y_CENTER_LOW)
       {
-        mouse_HID.y = (MIN (ADC_DMA_buffer[1], 254) - 127) / 4;
+        mouse_HID.y = (MIN (ADC_DMA_buffer[1], 254) - 127) / 8;
       }
       else
       {
