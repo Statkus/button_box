@@ -61,8 +61,9 @@ static void MX_TIM1_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
-void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state);
+void GPIO_PinState_to_bit(uint64_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state);
 void Compute_Rotary_Encoder_State(Rotary_Encoder_TypeDef* rotary_encoder);
+uint8_t Compute_Checksum(const uint8_t* buffer, uint8_t length);
 
 /* USER CODE END PFP */
 
@@ -72,6 +73,10 @@ void Compute_Rotary_Encoder_State(Rotary_Encoder_TypeDef* rotary_encoder);
 uint8_t new_ADC_data = 0;
 
 GPIO_PinState GPIO_pin_state_debounced[NUMBER_OF_GPIOS] = {0};
+
+uint8_t rx_buffer = 0;
+
+uint8_t UART_buttons[5] = {0};
 
 /* USER CODE END 0 */
 
@@ -118,7 +123,7 @@ int main(void)
   joystick_HID.report_id = 2;
 
   uint8_t  previous_mouse_buttons    = 0;
-  uint32_t previous_joystick_buttons = 0;
+  uint64_t previous_joystick_buttons = 0;
 
   Rotary_Encoder_TypeDef rotary_encoders[NUMBER_OF_ROTARY_ENCODERS];
 
@@ -136,6 +141,8 @@ int main(void)
   HAL_ADC_Start_DMA(&hadc1, ADC_DMA_buffer, 2);
 
   HAL_TIM_Base_Start_IT(&htim1);
+
+  HAL_UART_Receive_IT(&huart1, &rx_buffer, 1);
 
   /* USER CODE END 2 */
 
@@ -228,9 +235,12 @@ int main(void)
       rotary_encoders[i].previous_B = rotary_encoders[i].B;
     }
 
-    // Set 4 last buttons to 4 first buttons but inverted
-    joystick_HID.buttons &= 0x0FFFFFFF;
-    joystick_HID.buttons |= (~joystick_HID.buttons & 0x0000000F) << 28;
+    // Compute UART buttons state
+    for (int i = 0; i < 5; i++)
+    {
+      joystick_HID.buttons &= ~(0xFF << (NUMBER_OF_GPIOS + (i * 8)));
+      joystick_HID.buttons |= ((uint64_t)(UART_buttons[i]) << (NUMBER_OF_GPIOS + (i * 8)));
+    }
 
     if (joystick_HID.buttons != previous_joystick_buttons)
     {
@@ -503,7 +513,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state)
+void GPIO_PinState_to_bit(uint64_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state)
 {
   if (pin_state == GPIO_PIN_SET)
   {
@@ -540,6 +550,18 @@ void Compute_Rotary_Encoder_State(Rotary_Encoder_TypeDef* rotary_encoder)
   }
 }
 
+uint8_t Compute_Checksum(const uint8_t* buffer, uint8_t length)
+{
+  uint8_t checksum = 0;
+
+  for (int i = 0; i < length; i++)
+  {
+    checksum ^= buffer[i];
+  }
+
+  return checksum;
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     new_ADC_data = 1;
@@ -565,8 +587,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     BUTTON_15_GPIO_Port,
     BUTTON_16_GPIO_Port,
     BUTTON_17_GPIO_Port,
-    BUTTON_18_GPIO_Port,
-    BUTTON_19_GPIO_Port,
     ROTARY_ENCODER_1_A_GPIO_Port,
     ROTARY_ENCODER_1_B_GPIO_Port,
     ROTARY_ENCODER_2_A_GPIO_Port,
@@ -592,8 +612,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     BUTTON_15_Pin,
     BUTTON_16_Pin,
     BUTTON_17_Pin,
-    BUTTON_18_Pin,
-    BUTTON_19_Pin,
     ROTARY_ENCODER_1_A_Pin,
     ROTARY_ENCODER_1_B_Pin,
     ROTARY_ENCODER_2_A_Pin,
@@ -637,6 +655,43 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
   {
     LED_counter++;
   }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  static uint8_t buffer[7] = {0};
+  static uint8_t buffer_index = 0;
+
+  switch (buffer_index)
+  {
+    case 0:
+      if (rx_buffer == 0xA5)
+      {
+        buffer[buffer_index] = rx_buffer;
+        buffer_index++;
+      }
+      break;
+
+    case 6:
+      buffer[buffer_index] = rx_buffer;
+      buffer_index = 0;
+
+      if (Compute_Checksum(buffer, 6) == buffer[6])
+      {
+        for (int i = 0; i < 5; i++)
+        {
+          UART_buttons[i] = buffer[i + 1];
+        }
+      }
+      break;
+
+    default:
+      buffer[buffer_index] = rx_buffer;
+      buffer_index++;
+      break;
+  }
+
+  HAL_UART_Receive_IT(&huart1, &rx_buffer, 1);
 }
 
 /* USER CODE END 4 */

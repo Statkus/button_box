@@ -127,7 +127,7 @@ void Error_Handler(void);
 #define MOUSE_Y_CENTER_LOW  120
 #define MOUSE_Y_CENTER_HIGH 134
 
-#define NUMBER_OF_BUTTONS         19
+#define NUMBER_OF_BUTTONS         17
 #define NUMBER_OF_ROTARY_ENCODERS 3
 #define NUMBER_OF_GPIOS           NUMBER_OF_BUTTONS + (NUMBER_OF_ROTARY_ENCODERS * 2)
 
