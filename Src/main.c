@@ -46,6 +46,8 @@ DMA_HandleTypeDef hdma_adc1;
 
 TIM_HandleTypeDef htim1;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -56,6 +58,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 void GPIO_PinState_to_bit(uint32_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state);
@@ -105,6 +108,7 @@ int main(void)
   MX_ADC1_Init();
   MX_USB_DEVICE_Init();
   MX_TIM1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   Mouse_HID_TypeDef mouse_HID = {0};
@@ -392,6 +396,39 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 19200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -441,11 +478,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : MOUSE_CLICK_Pin ROTARY_ENCODER_3_B_Pin ROTARY_ENCODER_3_A_Pin ROTARY_ENCODER_2_B_Pin
-                           ROTARY_ENCODER_2_A_Pin BUTTON_19_Pin BUTTON_15_Pin BUTTON_16_Pin
-                           BUTTON_17_Pin BUTTON_18_Pin */
+                           ROTARY_ENCODER_2_A_Pin BUTTON_17_Pin BUTTON_15_Pin BUTTON_16_Pin */
   GPIO_InitStruct.Pin = MOUSE_CLICK_Pin|ROTARY_ENCODER_3_B_Pin|ROTARY_ENCODER_3_A_Pin|ROTARY_ENCODER_2_B_Pin
-                          |ROTARY_ENCODER_2_A_Pin|BUTTON_19_Pin|BUTTON_15_Pin|BUTTON_16_Pin
-                          |BUTTON_17_Pin|BUTTON_18_Pin;
+                          |ROTARY_ENCODER_2_A_Pin|BUTTON_17_Pin|BUTTON_15_Pin|BUTTON_16_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);

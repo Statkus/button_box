@@ -77,8 +77,8 @@ void Error_Handler(void);
 #define ROTARY_ENCODER_2_B_GPIO_Port GPIOA
 #define ROTARY_ENCODER_2_A_Pin GPIO_PIN_6
 #define ROTARY_ENCODER_2_A_GPIO_Port GPIOA
-#define BUTTON_19_Pin GPIO_PIN_7
-#define BUTTON_19_GPIO_Port GPIOA
+#define BUTTON_17_Pin GPIO_PIN_7
+#define BUTTON_17_GPIO_Port GPIOA
 #define BUTTON_1_Pin GPIO_PIN_0
 #define BUTTON_1_GPIO_Port GPIOB
 #define BUTTON_2_Pin GPIO_PIN_1
@@ -97,8 +97,6 @@ void Error_Handler(void);
 #define BUTTON_15_GPIO_Port GPIOA
 #define BUTTON_16_Pin GPIO_PIN_9
 #define BUTTON_16_GPIO_Port GPIOA
-#define BUTTON_17_Pin GPIO_PIN_10
-#define BUTTON_17_GPIO_Port GPIOA
 #define DM_Pin GPIO_PIN_11
 #define DM_GPIO_Port GPIOA
 #define DP_Pin GPIO_PIN_12
@@ -107,8 +105,6 @@ void Error_Handler(void);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
-#define BUTTON_18_Pin GPIO_PIN_15
-#define BUTTON_18_GPIO_Port GPIOA
 #define BUTTON_3_Pin GPIO_PIN_3
 #define BUTTON_3_GPIO_Port GPIOB
 #define BUTTON_4_Pin GPIO_PIN_4
