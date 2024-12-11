@@ -119,7 +119,7 @@ typedef struct
 typedef struct
 {
     uint8_t report_id;
-    uint32_t buttons;
+    uint64_t buttons;
     int8_t x;
     int8_t y;
     int8_t z;
