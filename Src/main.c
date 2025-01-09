@@ -63,7 +63,8 @@ static void MX_USART1_UART_Init(void);
 
 void GPIO_PinState_to_bit(uint64_t* bitfield, uint8_t bit_index, GPIO_PinState pin_state);
 void Compute_Rotary_Encoder_State(Rotary_Encoder_TypeDef* rotary_encoder);
-uint8_t Compute_CRC(const uint8_t* buffer, uint8_t length);
+uint16_t Compute_UART_CRC(const uint8_t* buffer, uint8_t length);
+uint16_t Accumulate_UART_CRC(uint16_t accumulation, uint8_t byte);
 
 /* USER CODE END PFP */
 
@@ -77,41 +78,6 @@ GPIO_PinState GPIO_pin_state_debounced[NUMBER_OF_GPIOS] = {0};
 uint8_t rx_buffer = 0;
 
 uint8_t UART_buttons[5] = {0};
-
-const uint8_t CRC8_table[256] = {
-  0, 94, 188, 226, 97, 63, 221, 131,
-  194, 156, 126, 32, 163, 253, 31, 65,
-  157, 195, 33, 127, 252, 162, 64, 30,
-  95, 1, 227, 189, 62, 96, 130, 220,
-  35, 125, 159, 193, 66, 28, 254, 160,
-  225, 191, 93, 3, 128, 222, 60, 98,
-  190, 224, 2, 92, 223, 129, 99, 61,
-  124, 34, 192, 158, 29, 67, 161, 255,
-  70, 24, 250, 164, 39, 121, 155, 197,
-  132, 218, 56, 102, 229, 187, 89, 7,
-  219, 133, 103, 57, 186, 228, 6, 88,
-  25, 71, 165, 251, 120, 38, 196, 154,
-  101, 59, 217, 135, 4, 90, 184, 230,
-  167, 249, 27, 69, 198, 152, 122, 36,
-  248, 166, 68, 26, 153, 199, 37, 123,
-  58, 100, 134, 216, 91, 5, 231, 185,
-  140, 210, 48, 110, 237, 179, 81, 15,
-  78, 16, 242, 172, 47, 113, 147, 205,
-  17, 79, 173, 243, 112, 46, 204, 146,
-  211, 141, 111, 49, 178, 236, 14, 80,
-  175, 241, 19, 77, 206, 144, 114, 44,
-  109, 51, 209, 143, 12, 82, 176, 238,
-  50, 108, 142, 208, 83, 13, 239, 177,
-  240, 174, 76, 18, 145, 207, 45, 115,
-  202, 148, 118, 40, 171, 245, 23, 73,
-  8, 86, 180, 234, 105, 55, 213, 139,
-  87, 9, 235, 181, 54, 104, 138, 212,
-  149, 203, 41, 119, 244, 170, 72, 22,
-  233, 183, 85, 11, 136, 214, 52, 106,
-  43, 117, 151, 201, 74, 20, 246, 168,
-  116, 42, 200, 150, 21, 75, 169, 247,
-  182, 232, 10, 84, 215, 137, 107, 53
-};
 
 /* USER CODE END 0 */
 
@@ -590,18 +556,27 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     new_ADC_data = 1;
 }
 
-uint8_t Compute_CRC(const uint8_t* buffer, uint8_t length)
+uint16_t Compute_UART_CRC(const uint8_t* buffer, uint8_t length)
 {
-  uint8_t crc = 0xFF;
+  // MCRF4XX 16 bits CRC with 0xFFFF init value
+  uint16_t accumulation = 0xFFFF;
 
-  while (length > 0)
+  for (int i = 0; i < length; i++)
   {
-    crc = CRC8_table[(*buffer) ^ crc];
-    buffer++;
-    length--;
+    accumulation = Accumulate_UART_CRC(accumulation, buffer[i]);
   }
 
-  return crc;
+  return accumulation;
+}
+
+uint16_t Accumulate_UART_CRC(uint16_t accumulation, uint8_t byte)
+{
+  const uint16_t accumulation_LSB = accumulation & 0x00FF;
+  const uint16_t accumulation_MSB = accumulation >> 8;
+  uint16_t tmp = (uint16_t)(byte) ^ accumulation_LSB;
+
+  tmp ^= (tmp << 4) & 0x00FF;
+  return accumulation_MSB ^ (tmp << 8) ^ (tmp << 3) ^ (tmp >> 4);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
@@ -696,7 +671,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  static uint8_t buffer[7] = {0};
+  static uint8_t buffer[9] = {0};
   static uint8_t buffer_index = 0;
 
   switch (buffer_index)
@@ -709,15 +684,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
       }
       break;
 
-    case 6:
+    case 8:
       buffer[buffer_index] = rx_buffer;
       buffer_index = 0;
 
-      if (Compute_CRC(buffer, 6) == buffer[6])
+      uint16_t UART_CRC = Compute_UART_CRC(buffer, sizeof(buffer) - 2);
+      if ((uint8_t)(UART_CRC & 0x00FF) == buffer[7] && (uint8_t)(UART_CRC >> 8) == buffer[8])
       {
         for (int i = 0; i < 5; i++)
         {
-          UART_buttons[i] = buffer[i + 1];
+          UART_buttons[i] = buffer[i + 2];
         }
       }
       break;
